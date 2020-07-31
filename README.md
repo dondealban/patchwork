@@ -1,26 +1,40 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-patchwork <img src="man/figures/logo.png" align="right" />
-==========================================================
 
-[![Travis-CI Build Status](https://travis-ci.org/thomasp85/patchwork.svg?branch=master)](https://travis-ci.org/thomasp85/patchwork) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thomasp85/patchwork?branch=master&svg=true)](https://ci.appveyor.com/project/thomasp85/patchwork) [![CRAN\_Release\_Badge](http://www.r-pkg.org/badges/version-ago/patchwork)](https://CRAN.R-project.org/package=patchwork) [![CRAN\_Download\_Badge](http://cranlogs.r-pkg.org/badges/patchwork)](https://CRAN.R-project.org/package=patchwork)
+# patchwork <a href='https://patchwork.data-imaginist.com'><img src='man/figures/logo.png' align="right" height="131.5" /></a>
 
-The goal of `patchwork` is to make it ridiculously simple to combine separate ggplots into the same graphic. As such it tries to solve the same problem as `gridExtra::grid.arrange()` and `cowplot::plot_grid` but using an API that incites exploration and iteration.
+<!-- badges: start -->
 
-Installation
-------------
+[![R build
+status](https://github.com/thomasp85/patchwork/workflows/R-CMD-check/badge.svg)](https://github.com/thomasp85/patchwork)
+[![CRAN\_Release\_Badge](http://www.r-pkg.org/badges/version-ago/patchwork)](https://CRAN.R-project.org/package=patchwork)
+[![CRAN\_Download\_Badge](http://cranlogs.r-pkg.org/badges/patchwork)](https://CRAN.R-project.org/package=patchwork)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Codecov test
+coverage](https://codecov.io/gh/thomasp85/patchwork/branch/master/graph/badge.svg)](https://codecov.io/gh/thomasp85/patchwork?branch=master)
+<!-- badges: end -->
 
-You can install patchwork from github with:
+The goal of `patchwork` is to make it ridiculously simple to combine
+separate ggplots into the same graphic. As such it tries to solve the
+same problem as `gridExtra::grid.arrange()` and `cowplot::plot_grid` but
+using an API that incites exploration and iteration, and scales to
+arbitrily complex layouts.
+
+## Installation
+
+You can install patchwork from CRAN using
+`install.packages('patchwork')`. Alternatively you can grab the
+development version from github using devtools:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("thomasp85/patchwork")
 ```
 
-Example
--------
+## Basic example
 
-The usage of `patchwork` is simple: just add plots together!
+The usage of `patchwork` is simple: just add plots together\!
 
 ``` r
 library(ggplot2)
@@ -32,100 +46,41 @@ p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
 p1 + p2
 ```
 
-![](man/figures/README-example-1.png)
+![](man/figures/README-example-1.png)<!-- -->
 
-you are of course free to also add the plots together as part of the same plotting operation:
-
-``` r
-ggplot(mtcars) +
-  geom_point(aes(mpg, disp)) +
-  ggplot(mtcars) + 
-  geom_boxplot(aes(gear, disp, group = gear))
-```
-
-![](man/figures/README-unnamed-chunk-2-1.png)
-
-layouts can be specified by adding a `plot_layout()` call to the assemble. This lets you define the dimensions of the grid and how much space to allocate to the different rows and columns
-
-``` r
-p1 + p2 + plot_layout(ncol = 1, heights = c(3, 1))
-```
-
-![](man/figures/README-unnamed-chunk-3-1.png)
-
-If you need to add a bit of space between your plots you can use `plot_spacer()` to fill a cell in the grid with nothing
-
-``` r
-p1 + plot_spacer() + p2
-```
-
-![](man/figures/README-unnamed-chunk-4-1.png)
-
-You can make nested plots layout by wrapping part of the plots in parentheses - in these cases the layout is scoped to the different nesting levels
+patchwork provides rich support for arbitrarily complex layouts with
+full alignment. As an example, check out this very readable code for
+nesting three plots on top of a third:
 
 ``` r
 p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
 p4 <- ggplot(mtcars) + geom_bar(aes(carb))
 
-p4 + {
-  p1 + {
-    p2 +
-      p3 +
-      plot_layout(ncol = 1)
-  }
-} +
-  plot_layout(ncol = 1)
-```
-
-![](man/figures/README-unnamed-chunk-5-1.png)
-
-### Advanced features
-
-In addition to adding plots and layouts together, `patchwork` defines some other operators that might be of interest. `-` will behave like `+` but put the left and right side in the same nesting level (as opposed to putting the right side into the left sides nesting level). Observe:
-
-``` r
-p1 + p2 + p3 + plot_layout(ncol = 1)
-```
-
-![](man/figures/README-unnamed-chunk-6-1.png)
-
-this is basically the same as without braces (just like standard math arithmetic) - the plots are added sequentially to the same nesting level. Now look:
-
-``` r
-p1 + p2 - p3 + plot_layout(ncol = 1)
-```
-
-![](man/figures/README-unnamed-chunk-7-1.png)
-
-Now `p1 + p2` and `p3` is on the same level...
-
-> A note on semantics. If `-` is read as *subtrack* its use makes little sense as we are not removing plots. Think of it as a hyphen instead...
-
-Often you are interested in just putting plots besides or on top of each other. `patchwork` provides both `|` and `/` for horizontal and vertical layouts respectively. They can of course be combined for a very readable layout syntax:
-
-``` r
 (p1 | p2 | p3) /
       p4
 ```
 
-![](man/figures/README-unnamed-chunk-8-1.png)
+![](man/figures/README-unnamed-chunk-2-1.png)<!-- -->
 
-There are two additional operators that are used for a slightly different purpose, namely to reduce code repetition. Consider the case where you want to change the theme for all plots in an assemble. Instead of modifying all plots individually you can use `&` or `*` to add elements to all subplots. The two differ in that `*` will only affect the plots on the current nesting level:
+## Learn more
 
-``` r
-(p1 + (p2 + p3) + p4 + plot_layout(ncol = 1)) * theme_bw()
-```
+patchwork can do so much more. Check out the guides for learning
+everything there is to know about all the different features:
 
-![](man/figures/README-unnamed-chunk-9-1.png)
+  - [Getting
+    Started](https://patchwork.data-imaginist.com/articles/patchwork.html)
+  - [Assembling
+    Plots](https://patchwork.data-imaginist.com/articles/guides/assembly.html)
+  - [Defining
+    Layouts](https://patchwork.data-imaginist.com/articles/guides/layout.html)
+  - [Adding
+    Annotation](https://patchwork.data-imaginist.com/articles/guides/annotation.html)
+  - [Aligning across
+    pages](https://patchwork.data-imaginist.com/articles/guides/multipage.html)
 
-whereas `&` will recurse into nested levels:
+## Code of Conduct
 
-``` r
-p1 + (p2 + p3) + p4 + plot_layout(ncol = 1) & theme_bw()
-```
-
-![](man/figures/README-unnamed-chunk-10-1.png)
-
-> Note that parenthesis is required in the former case due to higher precedence of the `*` operator. The latter case is the most common so it has deserved the easiest use.
-
-This is all it does for now, but stay tuned as more functionality is added, such as collapsing guides, etc...
+Please note that the patchwork project is released with a [Contributor
+Code of
+Conduct](https://patchwork.data-imaginist.com/CODE_OF_CONDUCT.html). By
+contributing to this project, you agree to abide by its terms.

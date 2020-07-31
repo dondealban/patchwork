@@ -2,10 +2,19 @@
 % Please edit documentation in R/wrap_plots.R
 \name{wrap_plots}
 \alias{wrap_plots}
-\title{Wrap plots into an assemble}
+\title{Wrap plots into a patchwork}
 \usage{
-wrap_plots(..., ncol = NULL, nrow = NULL, byrow = NULL, widths = NULL,
-  heights = NULL, guides = NULL, tag_level = NULL)
+wrap_plots(
+  ...,
+  ncol = NULL,
+  nrow = NULL,
+  byrow = NULL,
+  widths = NULL,
+  heights = NULL,
+  guides = NULL,
+  tag_level = NULL,
+  design = NULL
+)
 }
 \arguments{
 \item{...}{multiple \code{ggplot}s or a list containing \code{ggplot} objects}
@@ -27,13 +36,24 @@ in the grid. Will get repeated to match the dimensions of the grid.}
 \item{heights}{The relative widths and heights of each column and row
 in the grid. Will get repeated to match the dimensions of the grid.}
 
-\item{guides}{A string specifying how guides should be treated in the layout}
+\item{guides}{A string specifying how guides should be treated in the layout.
+\code{'collect'} will collect guides below to the given nesting level, removing
+duplicates. \code{'keep'} will stop collection at this level and let guides be
+placed alongside their plot. \code{auto} will allow guides to be collected if a
+upper level tries, but place them alongside the plot if not.  If you modify
+default guide "position" with \link[ggplot2:theme]{theme(legend.position=...)}
+while also collecting guides you must apply that change to the overall
+patchwork (see example).}
 
-\item{tag_level}{A string (\code{'keep'} or \code{'new'}) to indicate whether
+\item{tag_level}{A string (\code{'keep'} or \code{'new'}) to indicate how
 auto-tagging should behave. See \code{\link[=plot_annotation]{plot_annotation()}}.}
+
+\item{design}{Specification of the location of areas in the layout. Can either
+be specified as a text string or by concatenating calls to \code{\link[=area]{area()}} together.
+See the examples for further information on use.}
 }
 \value{
-A \code{ggassemble} object
+A \code{patchwork} object
 }
 \description{
 While the use of \code{+} is a natural way to add plots together, it can be
@@ -41,12 +61,20 @@ difficult to string together multiple plots programmatically if the number
 of plots is not known beforehand. \code{wrap_plots} makes it easy to take a list
 of plots and add them into one composition, along with layout specifications.
 }
+\details{
+If \code{design} is specified as a text string \emph{and} the plots are named (e.g.
+\code{wrap_plots(A = p1, ...)}) \emph{and} all plot names are single characters
+represented in the design layout string, the plots will be matched to their
+respective area by name. Otherwise the areas will be filled out
+sequentially in the same manner as using the \code{+} operator. See the examples
+for more.
+}
 \examples{
 library(ggplot2)
 
 p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
 p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
-p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
+p3 <- ggplot(mtcars) + geom_bar(aes(gear)) + facet_wrap(~cyl)
 p4 <- ggplot(mtcars) + geom_bar(aes(carb))
 p5 <- ggplot(mtcars) + geom_violin(aes(cyl, mpg, group = cyl))
 
@@ -56,5 +84,13 @@ wrap_plots(p1, p2, p3, p4, p5)
 # Or add them as a list...
 plots <- list(p1, p2, p3, p4, p5)
 wrap_plots(plots)
+
+# Match plots to areas by name
+design <- "#BB
+           AA#"
+wrap_plots(B = p1, A = p2, design = design)
+
+# Compare to not using named plot arguments
+wrap_plots(p1, p2, design = design)
 
 }
